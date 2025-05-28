@@ -12,7 +12,6 @@ public class DatabaseConnection {
     private static final String DB_URL = "jdbc:sqlite:ollivanders.db";
     private static Connection connection;
 
-    // Private constructor to prevent instantiation
     private DatabaseConnection() {}
 
     public static Connection getConnection() throws SQLException {
@@ -20,7 +19,6 @@ public class DatabaseConnection {
             try {
                 Class.forName("org.sqlite.JDBC");
                 connection = DriverManager.getConnection(DB_URL);
-                // Enable foreign key support for SQLite
                 connection.createStatement().execute("PRAGMA foreign_keys = ON");
             } catch (ClassNotFoundException e) {
                 throw new SQLException("SQLite JDBC driver not found", e);
@@ -35,7 +33,6 @@ public class DatabaseConnection {
         }
     }
 
-    // Method to initialize the database schema
     public static void initializeDatabase(String sqlFilePath) {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();

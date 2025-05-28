@@ -14,7 +14,6 @@ public class Purchase {
 
     }
 
-    // Constructors
     public Purchase(int wandId, int customerId, double salePrice) {
         this.wandId = wandId;
         this.customerId = customerId;
@@ -68,9 +67,6 @@ public class Purchase {
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
-
-    // Getters & Setters
-    // ... (implement for all fields)
 
     @Override
     public String toString() {

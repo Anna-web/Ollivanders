@@ -10,7 +10,6 @@ import java.util.List;
 
 public class InventoryService {
 
-    // Get current inventory with material names
     public List<InventoryItem> getFullInventory() throws SQLException {
         String sql = "SELECT i.*, " +
                 "CASE WHEN i.item_type = 'wood' THEN w.name ELSE c.material END AS material_name " +
@@ -38,7 +37,6 @@ public class InventoryService {
         return inventory;
     }
 
-    // Update stock levels (used when processing deliveries)
     public boolean updateStock(String itemType, int materialId, int quantityChange) throws SQLException {
         String sql = "UPDATE component_inventory " +
                 "SET quantity = quantity + ?, last_updated = datetime('now') " +

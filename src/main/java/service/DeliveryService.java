@@ -11,7 +11,6 @@ import java.util.List;
 
 public class DeliveryService {
 
-    // Record a new delivery and update inventory
     public boolean recordDelivery(Delivery delivery) throws SQLException {
         String deliverySql = "INSERT INTO inventory_deliveries (supplier_name, received_by, notes) VALUES (?, ?, ?)";
         String itemSql = "INSERT INTO delivery_items (delivery_id, item_type, material_id, quantity) VALUES (?, ?, ?, ?)";
@@ -44,7 +43,6 @@ public class DeliveryService {
                         pstmt.setInt(4, item.getQuantity());
                         pstmt.addBatch();
 
-                        // Update inventory
                         updateStock(item.getItemType(), item.getMaterialId(), item.getQuantity(), conn);
                     }
                     pstmt.executeBatch();
@@ -59,7 +57,6 @@ public class DeliveryService {
         }
     }
 
-    // Update stock in the inventory
     private void updateStock(String itemType, int materialId, int quantity, Connection conn) throws SQLException {
         String updateSql = "UPDATE component_inventory SET quantity = quantity + ? " +
                 "WHERE item_type = ? AND material_id = ?";
@@ -84,7 +81,6 @@ public class DeliveryService {
         }
     }
 
-    // Get delivery history
     public List<Delivery> getDeliveryHistory() throws SQLException {
         String sql = "SELECT d.* FROM inventory_deliveries d ORDER BY d.delivery_date DESC";
 
@@ -151,15 +147,15 @@ public class DeliveryService {
                     delivery.setSupplierName(rs.getString("supplier_name"));
                     delivery.setReceivedBy(rs.getString("received_by"));
                     delivery.setNotes(rs.getString("notes"));
-                    delivery.setItems(getDeliveryItems(deliveryId)); // Fetch associated items
+                    delivery.setItems(getDeliveryItems(deliveryId));
                     return delivery;
                 }
             }
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.getMessage());
-            throw e; // Rethrow the exception after logging
+            throw e;
         }
-        return null; // Return null if no delivery is found
+        return null;
     }
 
 

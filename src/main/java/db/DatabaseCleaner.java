@@ -21,7 +21,6 @@ public class DatabaseCleaner {
 
         System.out.println("RESETTING DB...");
 
-        // Execute the reset SQL script
         executeResetScript();
         return true;
     }
@@ -35,16 +34,14 @@ public class DatabaseCleaner {
             String line;
             StringBuilder sqlCommand = new StringBuilder();
             while ((line = reader.readLine()) != null) {
-                // Skip empty lines and comments
                 if (line.trim().isEmpty() || line.trim().startsWith("--")) {
                     continue;
                 }
                 sqlCommand.append(line).append("\n");
 
-                // Execute the command if it ends with a semicolon
                 if (line.trim().endsWith(";")) {
                     statement.execute(sqlCommand.toString());
-                    sqlCommand.setLength(0); // Clear the command for the next one
+                    sqlCommand.setLength(0);
                 }
             }
         } catch (SQLException e) {

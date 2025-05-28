@@ -14,9 +14,7 @@ public class WandService {
         this.inventoryService = new InventoryService();
     }
 
-    // Create a new wand (unchanged, already correct)
     public boolean createWand(Wand wand) throws SQLException {
-        // Check inventory first
         if (!hasSufficientInventory(wand.getWoodId(), wand.getCoreId())) {
             throw new SQLException("Insufficient inventory to create this wand");
         }
@@ -38,25 +36,21 @@ public class WandService {
             stmt.setString(8, wand.getStatus());
             stmt.setString(9, wand.getNotes());
 
-            conn.setAutoCommit(false); // Start transaction
+            conn.setAutoCommit(false);
 
             try {
                 int affectedRows = stmt.executeUpdate();
 
                 if (affectedRows > 0) {
-                    // Update inventory
-//                    inventoryService.updateInventory("wood", wand.getWoodId(), -1);
-//                    inventoryService.updateInventory("core", wand.getCoreId(), -1);
-
                     try (ResultSet rs = stmt.getGeneratedKeys()) {
                         if (rs.next()) {
                             wand.setId(rs.getInt(1));
-                            conn.commit(); // Commit transaction
+                            conn.commit();
                             return true;
                         }
                     }
                 }
-                conn.rollback(); // Rollback if anything fails
+                conn.rollback();
                 return false;
             } catch (SQLException e) {
                 conn.rollback();
@@ -70,7 +64,6 @@ public class WandService {
                 inventoryService.getQuantity("core", coreId) > 0;
     }
 
-    // Get wand with full details (fixed)
     public static WandWithDetails getWandDetails(int wandId) throws SQLException {
         String sql = "SELECT w.*, wt.name as wood_name, wt.rarity as wood_rarity, " +
                 "wt.description as wood_desc, c.material as core_material, " +
@@ -91,7 +84,7 @@ public class WandService {
                     WoodType wood = new WoodType(
                             rs.getInt("wood_id"),
                             rs.getString("wood_name"),
-                            rs.getString("wood_rarity"),  // Now included
+                            rs.getString("wood_rarity"),
                             rs.getString("wood_desc")
                     );
 
@@ -99,25 +92,24 @@ public class WandService {
                             rs.getInt("core_id"),
                             rs.getString("core_material"),
                             rs.getString("core_desc"),
-                            0  // danger level
+                            0
                     );
 
-                    return new WandWithDetails(wand, wood, core, null); // owner=null
+                    return new WandWithDetails(wand, wood, core, null);
                 }
             }
         }
         return null;
     }
 
-    // Made public for other services to use
     public static Wand extractWandFromResultSet(ResultSet rs) throws SQLException {
         Wand wand = new Wand();
-        wand.setId(rs.getInt("wand_id"));  // Primary key
+        wand.setId(rs.getInt("wand_id"));
         wand.setWoodId(rs.getInt("wood_id"));
         wand.setCoreId(rs.getInt("core_id"));
         wand.setLength(rs.getDouble("length"));
         wand.setFlexibility(rs.getString("flexibility"));
-        wand.setProductionDate(rs.getString("production_date"));  // From schema
+        wand.setProductionDate(rs.getString("production_date"));
         wand.setCondition(rs.getString("condition"));
         wand.setSpecialFeatures(rs.getString("special_features"));
         wand.setPrice(rs.getDouble("price"));
@@ -126,7 +118,6 @@ public class WandService {
         return wand;
     }
 
-    // Private helper (unchanged)
     private static void setWandParameters(PreparedStatement stmt, Wand wand) throws SQLException {
         stmt.setInt(1, wand.getWoodId());
         stmt.setInt(2, wand.getCoreId());
@@ -141,7 +132,7 @@ public class WandService {
 
     public static List<Wand> getAllWands() throws SQLException {
         List<Wand> wands = new ArrayList<>();
-        String sql = "SELECT * FROM wands"; // Adjust the query if you need specific columns
+        String sql = "SELECT * FROM wands";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -241,7 +232,7 @@ public class WandService {
                 }
             }
         }
-        return "Unknown Wood"; // Default if not found
+        return "Unknown Wood";
     }
 
     public String getCoreMaterial(int coreId) throws SQLException {
@@ -257,7 +248,7 @@ public class WandService {
                 }
             }
         }
-        return "Unknown Core"; // Default if not found
+        return "Unknown Core";
     }
 
     public List<String> getAllWoodNames() throws SQLException {
@@ -292,7 +283,7 @@ public class WandService {
 
     public int getWoodIdByName(String name) throws SQLException {
         String sql = "SELECT wood_id FROM wood_types WHERE name = ?";
-        int woodId = -1; // Default value if not found
+        int woodId = -1;
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -313,7 +304,7 @@ public class WandService {
 
     public int getCoreIdByMaterial(String material) throws SQLException {
         String sql = "SELECT core_id FROM cores WHERE material = ?";
-        int coreId = -1; // Default value if not found
+        int coreId = -1;
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

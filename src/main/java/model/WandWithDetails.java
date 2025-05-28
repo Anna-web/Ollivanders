@@ -6,7 +6,6 @@ public class WandWithDetails {
     private WandCore core;
     private Customer owner;  // Null if unsold
 
-    // Constructor
     public WandWithDetails(Wand wand, WoodType woodType, WandCore core, Customer owner) {
         this.wand = wand;
         this.woodType = woodType;

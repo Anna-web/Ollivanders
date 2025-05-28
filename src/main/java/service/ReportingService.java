@@ -13,10 +13,9 @@ import java.util.Map;
 
 public class ReportingService {
 
-    // Method to get all wand names
     public static List<String> getAllWandNames() throws SQLException {
         List<String> wandNames = new ArrayList<>();
-        String query = "SELECT wand_id FROM wands"; // Adjust the table name and column as necessary
+        String query = "SELECT wand_id FROM wands";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query);
@@ -31,7 +30,7 @@ public class ReportingService {
 
     public static List<Integer> getAllCustomerIds() throws SQLException {
         List<Integer> customerIds = new ArrayList<>();
-        String sql = "SELECT customer_id FROM customers"; // Adjust the query if needed
+        String sql = "SELECT customer_id FROM customers";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -46,7 +45,7 @@ public class ReportingService {
 
     public static List<Integer> getAllWandIds() throws SQLException {
         List<Integer> wandIds = new ArrayList<>();
-        String sql = "SELECT wand_id FROM wands"; // Adjust the query if needed
+        String sql = "SELECT wand_id FROM wands";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -59,7 +58,6 @@ public class ReportingService {
         return wandIds;
     }
 
-    // Method to get wand ID by name
     public static int getWandIdByName(int wand_id) throws SQLException {
         String query = "SELECT id FROM wands WHERE wand_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -70,7 +68,7 @@ public class ReportingService {
                 return resultSet.getInt("id");
             }
         }
-        return -1; // Return -1 if not found
+        return -1;
     }
 
     public static List<Map<String, Object>> getAllSales() throws SQLException {
@@ -117,8 +115,6 @@ public class ReportingService {
         return purchase;
     }
 
-
-    // Method to get customer ID by name
     public static int getCustomerIdByName(String customerFirstName, String customerLastName) throws SQLException {
         String query = "SELECT id FROM customers WHERE first_name = ? AND last_name = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -130,10 +126,9 @@ public class ReportingService {
                 return resultSet.getInt("id");
             }
         }
-        return -1; // Return -1 if not found
+        return -1;
     }
 
-    // Method to create a new purchase
     public static boolean createPurchase(Purchase purchase) throws SQLException {
         String query = "INSERT INTO sales (wand_id, customer_id, sale_date, sale_price, payment_method) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -151,7 +146,7 @@ public class ReportingService {
             preparedStatement.setString(5, paymentMethod);
 
             int rowsAffected = preparedStatement.executeUpdate();
-            return rowsAffected > 0; // Return true if the purchase was created successfully
+            return rowsAffected > 0;
         }
     }
 }

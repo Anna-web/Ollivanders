@@ -16,11 +16,9 @@ public class DatabaseInitializer {
 
     public static void initializeDatabase() throws SQLException, IOException {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // Execute schema creation
             System.out.println("CREATING TABLES...");
             executeSqlScript(conn, SCHEMA_SCRIPT);
 
-            // Populate with sample data if empty
             System.out.println("EMPTY DB, POPULATING...");
             executeSqlScript(conn, SAMPLE_DATA_SCRIPT);
 
@@ -41,7 +39,6 @@ public class DatabaseInitializer {
                 sb.append(line).append("\n");
             }
 
-            // Split by semicolon but handle apostrophes
             String[] queries = sb.toString().split(";(?=([^']*'[^']*')*[^']*$)");
 
             for (String query : queries) {
