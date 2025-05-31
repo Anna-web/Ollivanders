@@ -7,7 +7,9 @@ import model.Wand;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DeliveryService {
 
@@ -19,7 +21,6 @@ public class DeliveryService {
             conn.setAutoCommit(false);
 
             try {
-                // 1. Insert delivery header
                 int deliveryId;
                 try (PreparedStatement pstmt = conn.prepareStatement(deliverySql, Statement.RETURN_GENERATED_KEYS)) {
                     pstmt.setString(1, delivery.getSupplierName());
@@ -34,7 +35,6 @@ public class DeliveryService {
                     deliveryId = rs.getInt(1);
                 }
 
-                // 2. Insert all items
                 try (PreparedStatement pstmt = conn.prepareStatement(itemSql)) {
                     for (DeliveryItem item : delivery.getItems()) {
                         pstmt.setInt(1, deliveryId);
@@ -82,25 +82,51 @@ public class DeliveryService {
     }
 
     public List<Delivery> getDeliveryHistory() throws SQLException {
-        String sql = "SELECT d.* FROM inventory_deliveries d ORDER BY d.delivery_date DESC";
-
         List<Delivery> deliveries = new ArrayList<>();
+        String sql = "SELECT d.*, di.item_type, di.material_id, di.quantity, " +
+                "CASE WHEN di.item_type = 'wood' THEN w.name ELSE c.material END AS material_name " +
+                "FROM inventory_deliveries d " +
+                "LEFT JOIN delivery_items di ON d.delivery_id = di.delivery_id " +
+                "LEFT JOIN wood_types w ON di.item_type = 'wood' AND di.material_id = w.wood_id " +
+                "LEFT JOIN cores c ON di.item_type = 'core' AND di.material_id = c.core_id " +
+                "ORDER BY d.delivery_date DESC, d.delivery_id";
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
-            while (rs.next()) {
-                Delivery delivery = new Delivery();
-                delivery.setDeliveryId(rs.getInt("delivery_id"));
-                delivery.setDeliveryDate(rs.getString("delivery_date"));
-                delivery.setSupplierName(rs.getString("supplier_name"));
-                delivery.setReceivedBy(rs.getString("received_by"));
-                delivery.setNotes(rs.getString("notes"));
-                delivery.setItems(getDeliveryItems(delivery.getDeliveryId()));
+            Map<Integer, Delivery> deliveryMap = new HashMap<>();
 
-                deliveries.add(delivery);
+            while (rs.next()) {
+                try {
+                    int deliveryId = rs.getInt("delivery_id");
+                    Delivery delivery = deliveryMap.computeIfAbsent(deliveryId, id -> {
+                        try {
+                            Delivery d = new Delivery();
+                            d.setDeliveryId(id);
+                            d.setDeliveryDate(rs.getString("delivery_date"));
+                            d.setSupplierName(rs.getString("supplier_name"));
+                            d.setReceivedBy(rs.getString("received_by"));
+                            d.setNotes(rs.getString("notes"));
+                            d.setItems(new ArrayList<>());
+                            return d;
+                        } catch (SQLException e) {
+                            throw new RuntimeException("Error creating delivery", e);
+                        }
+                    });
+
+                    if (rs.getString("item_type") != null) {
+                        delivery.getItems().add(new DeliveryItem(
+                                rs.getString("item_type"),
+                                rs.getInt("material_id"),
+                                rs.getInt("quantity")
+                        ));
+                    }
+                } catch (SQLException e) {
+                    throw new SQLException("Error processing delivery row", e);
+                }
             }
+            deliveries.addAll(deliveryMap.values());
         }
         return deliveries;
     }
@@ -157,6 +183,4 @@ public class DeliveryService {
         }
         return null;
     }
-
-
 }

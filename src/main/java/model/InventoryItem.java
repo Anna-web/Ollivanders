@@ -8,7 +8,8 @@ public class InventoryItem {
     private int quantity;
     private String lastUpdated;
 
-    public InventoryItem(String itemType, int materialId, String materialName, int quantity, String lastUpdated) {
+    public InventoryItem(int itemId,String itemType, int materialId, String materialName, int quantity, String lastUpdated) {
+        this.itemId = itemId;
         this.itemType = itemType;
         this.materialId = materialId;
         this.materialName = materialName;

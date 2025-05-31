@@ -5,10 +5,7 @@ import db.DatabaseInitializer;
 import model.*;
 import service.*;
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -1165,6 +1162,11 @@ public class GUI extends JFrame {
         JPanel infoPanel = new JPanel(new GridLayout(0, 2, 10, 10));
         infoPanel.setBackground(BACKGROUND_COLOR);
 
+        infoPanel.add(createStyledLabel("Supplier Name:"));
+        JTextField supplierField = new JTextField();
+        styleTextField(supplierField);
+        infoPanel.add(supplierField);
+
         infoPanel.add(createStyledLabel("Received By:"));
         JTextField receivedByField = new JTextField();
         styleTextField(receivedByField);
@@ -1182,16 +1184,18 @@ public class GUI extends JFrame {
         JPanel itemsPanel = new JPanel(new BorderLayout());
         itemsPanel.setBackground(BACKGROUND_COLOR);
 
-        String[] itemColumns = {"Type", "Material", "Quantity", ""};
-        Object[][] itemData = {};
-        JTable itemsTable = new JTable(itemData, itemColumns);
+        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Type", "Material", "Quantity"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make table non-editable
+            }
+        };
 
-        TableColumn buttonColumn = itemsTable.getColumnModel().getColumn(3);
-        buttonColumn.setCellRenderer(new ButtonRenderer());
-        buttonColumn.setCellEditor(new ButtonEditor(new JCheckBox()));
-
+        JTable itemsTable = new JTable(tableModel);
         JScrollPane itemsScroll = new JScrollPane(itemsTable);
         itemsPanel.add(itemsScroll, BorderLayout.CENTER);
+
+        List<DeliveryItem> deliveryItems = new ArrayList<>();
 
         JPanel addItemPanel = new JPanel(new GridLayout(0, 4, 10, 10));
         addItemPanel.setBackground(BACKGROUND_COLOR);
@@ -1208,6 +1212,29 @@ public class GUI extends JFrame {
         addItemPanel.add(quantitySpinner);
 
         JButton addItemButton = createMenuButton("Add Item", () -> {
+            try {
+                String itemType = (String) itemTypeCombo.getSelectedItem();
+                String material = (String) materialCombo.getSelectedItem();
+                int quantity = (int) quantitySpinner.getValue();
+
+                if (material == null || material.isEmpty()) {
+                    showError("Please select a material");
+                    return;
+                }
+
+                tableModel.addRow(new Object[]{itemType, material, quantity});
+
+                int materialId = itemType.equals("wood")
+                        ? wandService.getWoodIdByName(material)
+                        : wandService.getCoreIdByMaterial(material);
+
+                deliveryItems.add(new DeliveryItem(itemType, materialId, quantity));
+
+                quantitySpinner.setValue(1);
+
+            } catch (SQLException ex) {
+                showError("Error adding item: " + ex.getMessage());
+            }
         });
         addItemButton.setPreferredSize(new Dimension(120, 30));
         addItemPanel.add(addItemButton);
@@ -1220,12 +1247,26 @@ public class GUI extends JFrame {
 
         JButton saveButton = createMenuButton("Save Delivery", () -> {
             try {
+                if (supplierField.getText().trim().isEmpty()) {
+                    showError("Please enter supplier name");
+                    return;
+                }
+
+                if (receivedByField.getText().trim().isEmpty()) {
+                    showError("Please enter who received the delivery");
+                    return;
+                }
+
+                if (deliveryItems.isEmpty()) {
+                    showError("Please add at least one item");
+                    return;
+                }
+
                 Delivery delivery = new Delivery();
+                delivery.setSupplierName(supplierField.getText());
                 delivery.setReceivedBy(receivedByField.getText());
                 delivery.setNotes(notesArea.getText());
-
-                List<DeliveryItem> items = new ArrayList<>();
-                delivery.setItems(items);
+                delivery.setItems(deliveryItems);
 
                 if (deliveryService.recordDelivery(delivery)) {
                     JOptionPane.showMessageDialog(dialog, "Delivery recorded successfully!");

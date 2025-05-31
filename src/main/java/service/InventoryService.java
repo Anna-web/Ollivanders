@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
 public class InventoryService {
 
     public List<InventoryItem> getFullInventory() throws SQLException {
@@ -16,7 +15,7 @@ public class InventoryService {
                 "FROM component_inventory i " +
                 "LEFT JOIN wood_types w ON i.item_type = 'wood' AND i.material_id = w.wood_id " +
                 "LEFT JOIN cores c ON i.item_type = 'core' AND i.material_id = c.core_id " +
-                "ORDER BY i.item_type, material_name";
+                "ORDER BY item_id";
 
         List<InventoryItem> inventory = new ArrayList<>();
 
@@ -26,6 +25,7 @@ public class InventoryService {
 
             while (rs.next()) {
                 inventory.add(new InventoryItem(
+                        rs.getInt("item_id"),
                         rs.getString("item_type"),
                         rs.getInt("material_id"),
                         rs.getString("material_name"),
@@ -37,19 +37,29 @@ public class InventoryService {
         return inventory;
     }
 
-    public boolean updateStock(String itemType, int materialId, int quantityChange) throws SQLException {
-        String sql = "UPDATE component_inventory " +
+    public boolean updateStock(String itemType, int materialId, int quantityChange, Connection conn) throws SQLException {
+        String updateSql = "UPDATE component_inventory " +
                 "SET quantity = quantity + ?, last_updated = datetime('now') " +
                 "WHERE item_type = ? AND material_id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
             pstmt.setInt(1, quantityChange);
             pstmt.setString(2, itemType);
             pstmt.setInt(3, materialId);
+            int affectedRows = pstmt.executeUpdate();
 
-            return pstmt.executeUpdate() > 0;
+            if (affectedRows == 0 && quantityChange > 0) {
+                // Item doesn't exist - insert new record if adding stock
+                String insertSql = "INSERT INTO component_inventory (item_type, material_id, quantity) " +
+                        "VALUES (?, ?, ?)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                    insertStmt.setString(1, itemType);
+                    insertStmt.setInt(2, materialId);
+                    insertStmt.setInt(3, quantityChange);
+                    insertStmt.executeUpdate();
+                }
+            }
+            return true;
         }
     }
 
@@ -68,30 +78,5 @@ public class InventoryService {
             }
         }
     }
-
-    public boolean updateInventory(String itemType, int materialId, int quantityChange) throws SQLException {
-        // First check if item exists
-        int currentQuantity = getQuantity(itemType, materialId);
-
-        if (currentQuantity == 0 && quantityChange > 0) {
-            // Item doesn't exist and we're adding - create new record
-            String insertSql = "INSERT INTO component_inventory (item_type, material_id, quantity) " +
-                    "VALUES (?, ?, ?)";
-
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-
-                pstmt.setString(1, itemType);
-                pstmt.setInt(2, materialId);
-                pstmt.setInt(3, quantityChange);
-
-                return pstmt.executeUpdate() > 0;
-            }
-        } else {
-            // Item exists - update quantity
-            return updateStock(itemType, materialId, quantityChange);
-        }
-    }
-
 
 }

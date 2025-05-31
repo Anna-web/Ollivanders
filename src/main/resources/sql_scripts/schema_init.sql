@@ -160,5 +160,4 @@ CREATE INDEX IF NOT EXISTS idx_wands_status ON wands(status);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(sale_date);
 CREATE INDEX IF NOT EXISTS idx_component_inventory_item ON component_inventory(item_id);
-CREATE INDEX IF NOT EXISTS idx_delivery_requests_item ON delivery_requests(item_id);
 

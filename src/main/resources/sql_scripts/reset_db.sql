@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS cores;
 DROP TABLE IF EXISTS wood_types;
 DROP TABLE IF EXISTS suppliers;
 DROP TABLE IF EXISTS component_inventory;
+DROP TABLE IF EXISTS inventory_deliveries;
 
 -- Re-enable foreign key checks
 PRAGMA foreign_keys = ON;
