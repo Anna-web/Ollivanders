@@ -1,6 +1,7 @@
 package db;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
@@ -9,7 +10,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
-    private static final String DB_URL = "jdbc:sqlite:ollivanders.db";
     private static Connection connection;
 
     private DatabaseConnection() {}
@@ -18,7 +18,8 @@ public class DatabaseConnection {
         if (connection == null || connection.isClosed()) {
             try {
                 Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection(DB_URL);
+                String dbPath = findDatabasePath();
+                connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
                 connection.createStatement().execute("PRAGMA foreign_keys = ON");
             } catch (ClassNotFoundException e) {
                 throw new SQLException("SQLite JDBC driver not found", e);
@@ -50,5 +51,24 @@ public class DatabaseConnection {
         } catch (SQLException e) {
             System.err.println("SQL error: " + e.getMessage());
         }
+    }
+
+    private static String findDatabasePath() {
+        String[] possiblePaths = {
+                "ollivanders.db",
+                "../ollivanders.db",
+                "db/ollivanders.db",
+                System.getProperty("user.dir") + "/ollivanders.db",
+        };
+
+        for (String path : possiblePaths) {
+            File dbFile = new File(path);
+            if (dbFile.exists()) {
+                return dbFile.getPath();
+            }
+        }
+
+        throw new RuntimeException("Could not find 'ollivanders.db' in:\n" +
+                String.join("\n", possiblePaths));
     }
 }
